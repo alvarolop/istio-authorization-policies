@@ -1,0 +1,32 @@
+---
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: openshift-operators-redhat
+  annotations:
+    openshift.io/display-name: "Openshift operators Red Hat"
+    openshift.io/description: ""
+---
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: openshift-logging
+  annotations:
+    openshift.io/node-selector: ""
+  labels:
+    openshift.io/cluster-monitoring: "true"
+---
+apiVersion: project.openshift.io/v1
+kind: Project
+metadata:
+  name: istio-system
+  annotations:
+    openshift.io/display-name: "Istio system"
+    openshift.io/description: "This project contains all the elements related to the OSSM control plane"
+# Add operatorGroup to be able to install operators in this namespace
+apiVersion: operators.coreos.com/v1
+kind: OperatorGroup
+metadata:
+  name: elasticsearch-operator
+  namespace: openshift-operators-redhat 
+spec: {}
