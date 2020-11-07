@@ -1,0 +1,73 @@
+= Istio Authorization Policies
+Álvaro López Medina <alopezme@redhat.com>
+v1.0, 2020-11
+// Create TOC wherever needed
+:toc: macro
+:sectanchors:
+:sectnumlevels: 2
+:sectnums: 
+:source-highlighter: pygments
+:imagesdir: images
+// Start: Enable admonition icons
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+ifndef::env-github[]
+:icons: font
+endif::[]
+// End: Enable admonition icons
+
+This repository showcases how to migrate from Istio RBAC to AuthorizationPolicies.
+
+// Create the Table of contents here
+toc::[]
+
+== Introduction
+
+Prior to version 1.4, Istio provided https://istio.io/v1.4/docs/reference/config/security/istio.rbac.v1alpha1/[RBAC policies] to enforce access control on services using three configuration resources: `ClusterRbacConfig`, `ServiceRole` and `ServiceRoleBinding`. With this API, users have been able to enforce control access at mesh-level, namespace-level and service-level.
+
+Istio 1.4, released on November 2019, introduces the `v1beta1` https://istio.io/latest/docs/reference/config/security/authorization-policy/[authorization policy], which is a major update to the previous `v1alpha1` role-based access control (RBAC) policy.
+
+In this repository, we are going to show case how to migrate from the deprecated configuration to the latest one.
+
+
+== Environment
+
+We will test this configuration in an environment deployed with the `Red Hat OpenShift Service Mesh 2.0` operator deployed on OCP 4.6.1, although it would work on a plain Istio deployment, too.
+
+=== Setting up your environment
+
+If you want to quickly set up a testing environment, execute the following commands in a clean OCP 4.6 environment:
+
+[source, bash]
+----
+# Make sure that the correct namespaces are created
+oc apply -f ossm/ocp-ossm-01-namespaces.yaml
+
+# Create subscriptions of all the dependencies of the OSSM
+oc apply -f ossm/ocp-ossm-02-operators-4.6.yaml
+
+# Create an OSSM control plane
+oc apply -f ossm/ocp-ossm-03-ServiceMeshControlPlane.yaml
+----
+
+After executing the previous commands, you may find the following deployments on the istio-system
+
+[source, bash]
+----
+oc get deployments -n istio-system
+NAME                   READY   UP-TO-DATE   AVAILABLE   AGE
+grafana                1/1     1            1           2d4h
+istio-egressgateway    1/1     1            1           2d4h
+istio-ingressgateway   1/1     1            1           2d4h
+istiod-basic           1/1     1            1           2d4h
+jaeger                 1/1     1            1           2d4h
+kiali                  1/1     1            1           2d4h
+prometheus             1/1     1            1           2d4h
+----
+
+
