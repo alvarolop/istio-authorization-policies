@@ -110,22 +110,46 @@ cd grpc-demo
 sed -i "s/sni_hosts/sniHosts/g" openshift-templates/grpc-demo-template-istio.yaml
 
 # Create the OCP template
-oc process -f openshift-templates/grpc-demo-template-istio.yaml -p ACCOUNT_ROUTE=account-grpc-demo-policies.apps.apps.sandbox448.opentlc.com | oc apply -f -
+oc process -f openshift-templates/grpc-demo-template-istio.yaml -p ACCOUNT_ROUTE=${PUBLIC_ROUTE} | oc apply -f -
 ----
 
 Test the application:
 [source, bash]
 ----
-$ curl account-grpc-demo-policies.apps.apps.sandbox448.opentlc.com/v1/account/01234
+$ curl ${PUBLIC_ROUTE}/v1/account/01234
 ----
+It works correctly!
 
 
 == Authorization policies
 
+Authorization policy supports both allow and deny policies. When allow and deny policies are used for a workload at the same time, the deny policies are evaluated first.
+
+Authorization Policy scope (target) is determined by `metadata/namespace` and an optional `selector`.
+
+* `metadata/namespace` tells which namespace the policy applies. If set to root namespace, the policy applies to all namespaces in a mesh.
+* workload `selector` can be used to further restrict where a policy applies.
 
 
+Configure the Authorization policy using a yaml file:
+[source, bash]
+----
+$ oc apply -f authorization/01-authorizationPolicy.yaml -n grpc-demo-policies
+----
 
 
+After some seconds, the auth policy will be applied and the http request will return an error:
+[source, bash]
+----
+$ curl -H "username: alvaro2" ${PUBLIC_ROUTE}/v1/account/01234
+RBAC: access denied
+----
+
+Use the following loop to test several versions of the auth policies:
+[source, bash]
+----
+$ for i in {1..100}; do curl ${PUBLIC_ROUTE}/v1/account/01234; done
+----
 
 
 
