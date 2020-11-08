@@ -5,11 +5,9 @@ metadata:
   name: basic
   namespace: istio-system
 spec:
-  version: v2.0
-  tracing:
-    type: Jaeger
-    sampling: 10000
   addons:
+    grafana:
+      enabled: true
     jaeger:
       name: jaeger
       install:
@@ -18,5 +16,18 @@ spec:
     kiali:
       enabled: true
       name: kiali
-    grafana:
+  gateways:
+    openshiftRoute:
       enabled: true
+  proxy:
+    resources:
+      requests:
+        cpu: 100m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 128Mi
+  tracing:
+    type: Jaeger
+    sampling: 10000
+  version: v2.0

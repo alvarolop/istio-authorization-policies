@@ -46,20 +46,30 @@ If you want to quickly set up a testing environment, execute the following comma
 [source, bash]
 ----
 # Make sure that the correct namespaces are created
-oc apply -f ossm/ocp-ossm-01-namespaces.yaml
+oc apply -f ocp/01-ossm-namespaces.yaml
 
 # Create subscriptions of all the dependencies of the OSSM
-oc apply -f ossm/ocp-ossm-02-operators-4.6.yaml
+oc apply -f ocp/02-ossm-operators-4.6.yaml
+
+# Patch operators to update manually
+oc patch sub $(oc get sub --no-headers -o=custom-columns="name:.metadata.name" -n openshift-operators) -n openshift-operators --type merge --patch '{"spec":{"installPlanApproval" : "Manual"}}'
+oc patch sub $(oc get sub --no-headers -o=custom-columns="name:.metadata.name" -n openshift-operators-redhat) -n openshift-operators-redhat --type merge --patch '{"spec":{"installPlanApproval" : "Manual"}}'
+
 
 # Create an OSSM control plane
-oc apply -f ossm/ocp-ossm-03-ServiceMeshControlPlane.yaml
+oc apply -f ocp/03-ServiceMeshControlPlane.yaml
 ----
 
 After executing the previous commands, you may find the following deployments on the istio-system
 
 [source, bash]
 ----
-oc get deployments -n istio-system
+$ oc get ServiceMeshControlPlane -A -w
+NAMESPACE      NAME    READY   STATUS            PROFILES      VERSION   AGE
+istio-system   basic   9/9     ComponentsReady   ["default"]   2.0.0     2m43s
+
+
+$ oc get deployments -n istio-system
 NAME                   READY   UP-TO-DATE   AVAILABLE   AGE
 grafana                1/1     1            1           2d4h
 istio-egressgateway    1/1     1            1           2d4h
@@ -69,5 +79,57 @@ jaeger                 1/1     1            1           2d4h
 kiali                  1/1     1            1           2d4h
 prometheus             1/1     1            1           2d4h
 ----
+
+
+== Deploy your testing application
+
+Any application would work to test this Authorization configuration. The application that I have chosen is `grpc-demo`. Please find the code https://github.com/drhelius/grpc-demo[here].
+
+First, create an OCP project and add it to OSSM:
+
+[source, bash]
+----
+# Create an OCP project
+oc new-project grpc-demo-policies --display-name="Testing project for AuthorizationPolicies"
+
+# Add the project to the Openshift Service Mesh member roll
+oc apply -f ocp/04-demo-service-mesh-member.yaml -n grpc-demo-policies
+----
+
+NOTE: Istio `VirtualService` CRD validation has https://github.com/istio/istio/issues/25103[changed] in Istio 1.6, so we need to perform a slight modification after cloning this example.
+
+Second, deploy `grpc-demo` on the cluster:
+
+[source, bash]
+----
+# Clone the repository
+git clone https://github.com/drhelius/grpc-demo
+cd grpc-demo
+
+# Fix the OCP template
+sed -i "s/sni_hosts/sniHosts/g" openshift-templates/grpc-demo-template-istio.yaml
+
+# Create the OCP template
+oc process -f openshift-templates/grpc-demo-template-istio.yaml -p ACCOUNT_ROUTE=account-grpc-demo-policies.apps.apps.sandbox448.opentlc.com | oc apply -f -
+----
+
+Test the application:
+[source, bash]
+----
+$ curl account-grpc-demo-policies.apps.apps.sandbox448.opentlc.com/v1/account/01234
+----
+
+
+== Authorization policies
+
+
+
+
+
+
+
+
+
+
 
 

@@ -23,6 +23,7 @@ metadata:
   annotations:
     openshift.io/display-name: "Istio system"
     openshift.io/description: "This project contains all the elements related to the OSSM control plane"
+---
 # Add operatorGroup to be able to install operators in this namespace
 apiVersion: operators.coreos.com/v1
 kind: OperatorGroup
