@@ -1,0 +1,14 @@
+---
+apiVersion: security.istio.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: auth-account
+spec:
+  action: ALLOW
+  selector:
+    matchLabels:
+      app: account
+  rules:
+  - when:
+    - key: request.headers[username]
+      values: ["alvaro"]
